@@ -1,2 +1,4 @@
+import re
+
 def DeleteThinking(Text: str):
-    return Text.replace("<think>\n\n</think>\n", "")
+    return re.sub("<think>.*<\/think>", "", Text, flags=re.DOTALL)
