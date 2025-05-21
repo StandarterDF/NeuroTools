@@ -1,38 +1,25 @@
 from datetime import datetime
 import LLMLibrary.ProjectFunctions as LLMFunc
 from langchain_openai import ChatOpenAI
+from markdown_pdf import Section
 import ProjectAutocreatorT
+import markdown_pdf
 import Config
 import pprint
 import re
 
 if __name__ == "__main__":
+    # ----- PROGRAM START -----
     print("#-------------------------------------------------#")
-    print("# -> PROVIDERS INSTALLED ")
-    Providers = list(Config.OpenAI_API_Providers.keys())
-    for Provider in Providers:
-        print(f"# {Providers.index(Provider)} -> {Provider}")
+    print("# -> PROJECT: Auto Creator")
     print("#-------------------------------------------------#")
-    print("# -> BASIC MODEL (INFORMATION)"); Choise = -1
-    while int(Choise) not in range(0, len(Providers)):
-        Choise = input("# -> Введите номер провайдера API: ")
-    Model = input(f"# -> Введите название модели ({Config.OpenAI_API_Providers[Providers[int(Choise)]]['model']}):")
-    if Model == "": Model = Config.OpenAI_API_Providers[Providers[int(Choise)]]["model"]
-    Config.OpenAI_API_Providers[Providers[int(Choise)]]["model"] = Model
-    AI_Basic = ChatOpenAI(**Config.OpenAI_API_Providers[Providers[int(Choise)]])
-    print("#-------------------------------------------------#")
-    print("# -> FUNCTIONAL MODEL (OUTPUT)"); Choise = -1
-    while int(Choise) not in range(0, len(Providers)):
-        Choise = input("# -> Введите номер провайдера API: ")
-    Model = input(f"# -> Введите название модели ({Config.OpenAI_API_Providers[Providers[int(Choise)]]['model']}):")
-    if Model == "": Model = Config.OpenAI_API_Providers[Providers[int(Choise)]]["model"]
-    Config.OpenAI_API_Providers[Providers[int(Choise)]]["model"] = Model
-    AI_Function = ChatOpenAI(**Config.OpenAI_API_Providers[Providers[int(Choise)]])
-    print("#-------------------------------------------------#")
+    from ProjectTemplate import *
+    # -------------------------
     Topic = input("# -> Введите тему проекта: ")
     TopicCount = input("# -> Желаемое количество тем: ")
     SubTopicGen = True if input("# -> Генерировать подглавы? (Да\Нет): ") == "Да" else False 
     ThinkMode = True if input("# -> Включить мысли модели? (Да\Нет): ") == "Да" else False 
+    GenPDF = True if input("# -> Генерировать PDF (Да\Нет): ") == "Да" else False 
     print("#-------------------------------------------------#")
     AI_Topic_G1 = AI_Function.with_structured_output(ProjectAutocreatorT.TopicGenerator)
     AI_Topic_G2 = AI_Function.with_structured_output(ProjectAutocreatorT.TopicGeneratorA1)
@@ -111,7 +98,7 @@ if __name__ == "__main__":
             
             """
             print(f"# -> (START) Генерирование введения в главу {CurrentTopics[0]}")
-            ResultText += LLMFunc.DeleteThinking(AI_Basic.invoke(
+            ResultText += "\n" + LLMFunc.DeleteThinking(AI_Basic.invoke(
                 ProjectAutocreatorT.Template_5.invoke(
                     {
                         "Topic": CurrentTopics[0],
@@ -119,10 +106,10 @@ if __name__ == "__main__":
                         "ThinkMode": "/nothink" if not ThinkMode else ""
                     }
                 )
-            ).content)
+            ).content) +  "\n"
             for SubElement in CurrentTopics[1:]:
                 print(f"# -> (START) Генерирование подглавы {SubElement}")
-                ResultText += LLMFunc.DeleteThinking(AI_Basic.invoke(
+                ResultText += "\n" +  LLMFunc.DeleteThinking(AI_Basic.invoke(
                     ProjectAutocreatorT.Template_6.invoke(
                         {
                             "Subtopic": SubElement,
@@ -131,42 +118,48 @@ if __name__ == "__main__":
                             "ThinkMode": "/nothink" if not ThinkMode else ""
                         }
                     )
-                ).content)
+                ).content) +  "\n"
         else:
             """
             
             """
             print(f"# -> Генерирование главы: {SElement}")
-            ResultText += LLMFunc.DeleteThinking(AI_Basic.invoke(
+            ResultText += "\n" +  LLMFunc.DeleteThinking(AI_Basic.invoke(
                 ProjectAutocreatorT.Template_7.invoke(
                     {
                         "Topic": SElement,
+                        "MainTopic": Topic,
+                        "AllTopics": "\n".join(Structure.Topics),
                         "ThinkMode": "/nothink" if not ThinkMode else ""
                     }
                 )
-            ).content)
+            ).content) +  "\n"
         FullStructure.extend(CurrentTopics)
     
     
-    ResultText = LLMFunc.DeleteThinking(AI_Basic.invoke(
+    ResultText = "\n" + LLMFunc.DeleteThinking(AI_Basic.invoke(
         ProjectAutocreatorT.Template_3.invoke(
             {
                 "Themes": "\n".join(FullStructure),
                 "ThinkMode": "/nothink" if not ThinkMode else ""
             }
         )    
-    ).content) + ResultText
+    ).content) + "\n" + ResultText
     
-    ResultText += LLMFunc.DeleteThinking(AI_Basic.invoke(
+    ResultText += "\n" +  LLMFunc.DeleteThinking(AI_Basic.invoke(
         ProjectAutocreatorT.Template_4.invoke(
             {
                 "Themes": "\n".join(FullStructure),
                 "ThinkMode": "/nothink" if not ThinkMode else ""
             }
         )    
-    ).content)
-    
-    with open(input("# -> Введите название файла, в который необходимо сохранить результат: ") + ".md", "w", encoding="utf-8") as FileWriter:
+    ).content)  +  "\n"
+    FileName = input("# -> Введите название файла, в который необходимо сохранить результат: ")
+    with open(FileName + ".md", "w", encoding="utf-8") as FileWriter:
         FileWriter.write(ResultText)
+    if GenPDF:
+        PDF = markdown_pdf.MarkdownPdf(toc_level=1)
+        PDF.add_section(Section(ResultText, toc=False))
+        PDF.save(FileName + ".pdf")
     print("# -> Файл успешно сохранен!")
         
