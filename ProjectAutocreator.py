@@ -37,13 +37,7 @@ if __name__ == "__main__":
         print(f"# -> Генерирование структуры (Попытка {i})")
         ExpTest = True
         Structure = AI_Topic_G1.invoke(
-            ProjectAutocreatorT.Template_1.invoke(
-                {
-                    "Topic": Topic,
-                    "TopicCount": TopicCount,
-                    "ThinkMode": "/nothink" if not ThinkMode else ""
-                }
-            )
+            ProjectAutocreatorT.Template_1.invoke({ "Topic": Topic, "TopicCount": TopicCount, "ThinkMode": "/nothink" if not ThinkMode else ""})
         )
         for Element in Structure.Topics:
             if re.match("^[0-9]{1,}\.", Element) == None: 
@@ -72,13 +66,7 @@ if __name__ == "__main__":
                 print(f"# -> Генерирование суб-структуры (Попытка {i})")
                 ExpTest = True
                 Result = AI_Topic_G2.invoke(
-                    ProjectAutocreatorT.Template_2.invoke(
-                        {
-                            "CurrTopic": CurrentTopics[0],
-                            "ThinkMode": "/nothink" if not ThinkMode else "",
-                            "CurNum": re.search("[0-9]{1,}\.", SElement).group()
-                        }
-                    )
+                    ProjectAutocreatorT.Template_2.invoke({"CurrTopic": CurrentTopics[0], "ThinkMode": "/nothink" if not ThinkMode else "", "CurNum": re.search("[0-9]{1,}\.", SElement).group()})
                 ).Topics
                 for Element in Result:
                     if re.match("^[0-9]{1,}\.", Element) == None: 
@@ -99,25 +87,12 @@ if __name__ == "__main__":
             """
             print(f"# -> (START) Генерирование введения в главу {CurrentTopics[0]}")
             ResultText += "\n" + LLMFunc.DeleteThinking(AI_Basic.invoke(
-                ProjectAutocreatorT.Template_5.invoke(
-                    {
-                        "Topic": CurrentTopics[0],
-                        "AllTopics": "\n".join(CurrentTopics[1:]),
-                        "ThinkMode": "/nothink" if not ThinkMode else ""
-                    }
-                )
+                ProjectAutocreatorT.Template_5.invoke({"Topic": CurrentTopics[0], "AllTopics": "\n".join(CurrentTopics[1:]), "ThinkMode": "/nothink" if not ThinkMode else ""})
             ).content) +  "\n"
             for SubElement in CurrentTopics[1:]:
                 print(f"# -> (START) Генерирование подглавы {SubElement}")
                 ResultText += "\n" +  LLMFunc.DeleteThinking(AI_Basic.invoke(
-                    ProjectAutocreatorT.Template_6.invoke(
-                        {
-                            "Subtopic": SubElement,
-                            "Topic": CurrentTopics[0],
-                            "AllTopics": "\n".join(CurrentTopics[1:]),
-                            "ThinkMode": "/nothink" if not ThinkMode else ""
-                        }
-                    )
+                    ProjectAutocreatorT.Template_6.invoke({"Subtopic": SubElement, "Topic": CurrentTopics[0], "AllTopics": "\n".join(CurrentTopics[1:]), "ThinkMode": "/nothink" if not ThinkMode else ""})
                 ).content) +  "\n"
         else:
             """
@@ -125,36 +100,20 @@ if __name__ == "__main__":
             """
             print(f"# -> Генерирование главы: {SElement}")
             ResultText += "\n" +  LLMFunc.DeleteThinking(AI_Basic.invoke(
-                ProjectAutocreatorT.Template_7.invoke(
-                    {
-                        "Topic": SElement,
-                        "MainTopic": Topic,
-                        "AllTopics": "\n".join(Structure.Topics),
-                        "ThinkMode": "/nothink" if not ThinkMode else ""
-                    }
-                )
+                ProjectAutocreatorT.Template_7.invoke({"Topic": SElement, "MainTopic": Topic, "AllTopics": "\n".join(Structure.Topics), "ThinkMode": "/nothink" if not ThinkMode else ""})
             ).content) +  "\n"
         FullStructure.extend(CurrentTopics)
     
     
     ResultText = "\n" + LLMFunc.DeleteThinking(AI_Basic.invoke(
-        ProjectAutocreatorT.Template_3.invoke(
-            {
-                "Themes": "\n".join(FullStructure),
-                "ThinkMode": "/nothink" if not ThinkMode else ""
-            }
+        ProjectAutocreatorT.Template_3.invoke({"Themes": "\n".join(FullStructure), "ThinkMode": "/nothink" if not ThinkMode else ""}
         )    
     ).content) + "\n" + ResultText
     
     ResultText += "\n" +  LLMFunc.DeleteThinking(AI_Basic.invoke(
-        ProjectAutocreatorT.Template_4.invoke(
-            {
-                "Themes": "\n".join(FullStructure),
-                "ThinkMode": "/nothink" if not ThinkMode else ""
-            }
-        )    
+        ProjectAutocreatorT.Template_4.invoke({"Themes": "\n".join(FullStructure), "ThinkMode": "/nothink" if not ThinkMode else ""})    
     ).content)  +  "\n"
-    FileName = input("# -> Введите название файла, в который необходимо сохранить результат: ")
+    FileName = Topic.replace(".", "")
     with open(FileName + ".md", "w", encoding="utf-8") as FileWriter:
         FileWriter.write(ResultText)
     if GenPDF:
