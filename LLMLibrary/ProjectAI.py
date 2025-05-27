@@ -1,23 +1,17 @@
-from langchain_openai import ChatOpenAI
-from pydantic import BaseModel, Field
-from typing import List
-import Config
+import json
+import requests
 
-class TopicGenerator(BaseModel):
-    Topics: List[str] = Field(description="Список всех глав для проекта")
-
-class TopicGeneratorA1(BaseModel):
-    Topics: List[str] = Field(description="Подглавы для главы")
-
-class ProjectAI:
-    def __init__(self):
-        self.AI = ChatOpenAI(
-            base_url=Config.OpenAI_API_BaseURL,
-            api_key=Config.OpenAI_API_Key,
-            model=Config.OpenAI_API_Model
-        )
-        self.TopicAI = self.AI.with_structured_output(TopicGenerator)
-        self.TopicA1AI = self.AI.with_structured_output(TopicGeneratorA1)
+class ProjectAI_Tools:
+    def get_models(self, base_api_url):
+        return json.loads(requests.get(f"{base_api_url}/models").text)
+    def models2list(self, models):
+        result = []
+        for model in models["data"]:
+            result.append(model["id"])
+        return result
     
-    def GenerateResponse(self, text, model=Config.OpenAI_API_Providers["OpenAI_API_Default"], disable_think=True):
-        return self.AI.invoke(text + ("/nothink" if disable_think else "")).content
+if __name__ == "__main__":
+    PAI = ProjectAI_Tools()
+    Models = PAI.get_models("http://192.168.0.124:1234/v1")
+    ModelsList = PAI.models2list(Models)
+    print(ModelsList)
