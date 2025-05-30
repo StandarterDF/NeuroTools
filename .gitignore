@@ -10,4 +10,5 @@ pyvenv.cfg
 *.pyc
 *.pdf
 *.svg
+*.txt
 Config.py
