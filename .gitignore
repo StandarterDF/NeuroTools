@@ -1,0 +1,13 @@
+.continue/
+__pycache__/
+Include/
+Lib/
+Docs/
+Data/
+Scripts/
+pyvenv.cfg
+*.md
+*.pyc
+*.pdf
+*.svg
+Config.py
