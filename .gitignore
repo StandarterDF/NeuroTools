@@ -12,3 +12,4 @@ pyvenv.cfg
 *.svg
 *.txt
 Config.py
+share/
