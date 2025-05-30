@@ -1,10 +1,8 @@
-from datetime import datetime
 import LLMLibrary.ProjectFunctions as LLMFunc
-from langchain_openai import ChatOpenAI
 from markdown_pdf import Section
+from ProjectTemplate import *
 import ProjectAutocreatorT
 import markdown_pdf
-import Config
 import pprint
 import re
 
@@ -13,7 +11,6 @@ if __name__ == "__main__":
     print("#-------------------------------------------------#")
     print("# -> PROJECT: Auto Creator")
     print("#-------------------------------------------------#")
-    from ProjectTemplate import *
     # -------------------------
     Topic = input("# -> Введите тему проекта: ")
     TopicCount = input("# -> Желаемое количество тем: ")
@@ -80,7 +77,7 @@ if __name__ == "__main__":
             CurrentTopics.extend(
                 Result
             )
-            print(f"# -> Подтемы:")
+            print("# -> Подтемы:")
             pprint.pprint(CurrentTopics[1:])
             """
             

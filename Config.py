@@ -9,15 +9,18 @@ OpenAI_API_Providers = {
         "base_url": "http://192.168.0.124:1234/v1", 
         "api_key": "sk-nokeyrequired", 
         "model": "qwen3-30b-a3b",
-        "type": "local"
+    },
+    "Local1": {
+        "base_url": "http://192.168.0.124:1234/v1", 
+        "api_key": "sk-nokeyrequired", 
+        "model": "qwen3-30b-a3b",
     },
     
-    "OpenRouter": {
-        "base_url": "https://openrouter.ai/api/v1", 
-        "api_key": "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", 
-        "model": "meta-llama/llama-4-maverick:free",
-        "type": "remote"
-    },
+    #"OpenRouter": {
+    #    "base_url": "https://openrouter.ai/api/v1", 
+    #    "api_key": "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", 
+    #    "model": "meta-llama/llama-4-maverick:free",
+    #},
 }
 OpenAI_API_Default = "OpenRouter"
 

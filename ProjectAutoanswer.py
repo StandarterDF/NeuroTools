@@ -1,12 +1,8 @@
-from datetime import datetime
 import LLMLibrary.ProjectFunctions as LLMFunc
-from langchain_openai import ChatOpenAI
 from markdown_pdf import Section
 import ProjectAutoanswerT
 import markdown_pdf
-import Config
 import pprint
-import re
 
 # ----- PROGRAM START -----
 print("#-------------------------------------------------#")
@@ -21,7 +17,7 @@ if __name__ == "__main__":
     QuestionTopic = input("# -> Тематика вопросов (None = Auto): ")
     QuestionLength = input("# -> Отвечать нужно так: ")
     QuestionParser = AI_Function.with_structured_output(ProjectAutoanswerT.QuestionParser)
-    Questions = QuestionParser.invoke(FileData, temperature = 0)
+    Questions = QuestionParser.invoke(FileData)
     print("#-------------------------------------------------#")
     print("Все вопросы:")
     pprint.pprint(Questions)

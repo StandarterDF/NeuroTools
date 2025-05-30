@@ -3,7 +3,7 @@ from langchain_core.prompts import PromptTemplate
 from pydantic import BaseModel, Field
 
 class QuestionParser(BaseModel):
-    Questions: List[str] = Field(description="Список всех вопросов, которые тут есть. У каждого вопроса должен быть порядковый номер. Так же важно, чтоб были затронуты все вопросы из файла.")
+    Questions: List[str] = Field(description="Список всех вопросов на русском, которые тут есть. У каждого вопроса должен быть порядковый номер. Так же важно, чтоб были затронуты все вопросы из файла.")
 
 Template_1 = PromptTemplate.from_template(
     """

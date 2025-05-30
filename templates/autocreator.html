@@ -12,6 +12,15 @@
             ::-webkit-scrollbar {
                 display: none;
             }
+
+            button {
+                transition: 0.3s;
+            }
+
+            button:hover {
+                transition: 0.3s;
+            }
+
         </style>
     </head>
     <body>
@@ -19,21 +28,56 @@
             {{ title }}
         </h1>
         <div class="w-75 mx-auto d-flex justify-content-end" style="margin-top: 50px;">
-            <textarea class="flex-grow-1" style="border: 3px solid #0d6efd; border-radius: 15px; overflow: hidden; margin-right: 15px; background-color: #060809; color: white;" disabled>
+            <textarea class="flex-grow-1" style="border: 3px solid #0d6efd; border-radius: 15px; overflow: hidden; margin-right: 15px; background-color: #060809; color: white; padding: 15px; overflow-y: scroll;" disabled id="TextGeneration_LOGS">
 
             </textarea>
             <div class="d-flex flex-column">
                 <div class="w-100" style="height: calc(60vh); overflow-y: scroll;">
-                    {% for mode in ['Chat Model', 'Functional Calling'] %}
+                    <h3 class="mx-auto text-center" style="border: 3px solid #0d6efd; border-radius: 25px; vertical-align: middle; width: 85%; color: white; height: 60px; line-height: 60px;">
+                                Базовое
+                    </h3>
+                    <div class="input-group mx-auto" style="width: 85%; margin-top: 25px;">
+                        <span class="input-group-text" id="basic-addon1" style="background-color: #060809; color: white;">Тема</span>
+                        <input type="text" class="form-control" placeholder="Основная тема проекта" aria-label="Username" aria-describedby="basic-addon1" style="background-color: #060809; color: white;" id="var_project_theme">
+                    </div>
+                    <div class="input-group mx-auto" style="width: 85%; margin-top: 25px;">
+                        <span class="input-group-text" id="basic-addon1" style="background-color: #060809; color: white;">Количество тем</span>
+                        <input type="text" class="form-control" placeholder="Основная тема проекта" aria-label="Username" aria-describedby="basic-addon1" style="background-color: #060809; color: white;" id="var_project_theme_count">
+                    </div>
+                    <div class="form-check mx-auto" style="width: 85%; margin-top: 25px;">
+                        <input class="form-check-input" type="checkbox" value="" id="var_subchart_generation">
+                            <label class="form-check-label" for="checkDefault" style="color: white;">
+                                Генерация подглав
+                            </label>
+                    </div>
+                    <div class="form-check mx-auto" style="width: 85%; margin-top: 25px;">
+                        <input class="form-check-input" type="checkbox" value="" id="var_pdf_generation">
+                            <label class="form-check-label" for="checkDefault" style="color: white;">
+                                Генерация PDF
+                            </label>
+                    </div>
+                    <div class="form-check mx-auto" style="width: 85%; margin-top: 25px;">
+                        <input class="form-check-input" type="checkbox" value="" id="var_thinking">
+                            <label class="form-check-label" for="checkDefault" style="color: white;">
+                                Рассуждения
+                            </label>
+                    </div>
+                    <div class="form-check mx-auto" style="width: 85%; margin-top: 25px;">
+                        <input class="form-check-input" type="checkbox" value="" id="var_thinking_output">
+                            <label class="form-check-label" for="checkDefault" style="color: white;">
+                                Вывод рассуждений
+                            </label>
+                    </div>
+                    {% for mode in ['Инф. модель', 'Функ. модель'] %}
                         <div class="d-flex justify-content-center flex-column">
-                            <h3 class="mx-auto text-center" style="margin-top: 25px; border: 3px solid #0d6efd; border-radius: 25px; vertical-align: middle; width: 85%; color: white; height: 60px; line-height: 60px;">
+                            <h4 class="mx-auto text-center" style="margin-top: 25px; border: 3px solid #0d6efd; border-radius: 25px; vertical-align: middle; width: 85%; color: white; height: 50px; line-height: 45px;">
                                 {{ mode }}
-                            </h3>
+                            </h4>
                             {% for provider in provider_models.keys() %}
-                                <button class="btn btn-outline-primary mx-auto" style="height: 45px; margin-top: 25px; width: 85%;" {% if provider != (provider_models.keys()|list|first) %}disabled{% endif %}>{{ provider }} </button>
+                                <button class="ProviderButton btn btn-outline-primary mx-auto" style="height: 45px; margin-top: 25px; width: 85%;" modetype="{{ mode }}" provider="{{ provider }}">{{ provider }} </button>
                             {% endfor %}
                             {% for provider in provider_models.keys() %}
-                                <select class="form-select mx-auto {% if provider != (provider_models.keys()|list|first) %}d-none{% endif %}" style="margin-top: 15px; width: 85%; background-color: #060809; color: white;">
+                                <select class="ProviderSelector form-select mx-auto {% if provider != (provider_models.keys()|list|first) %}d-none{% endif %}" style="margin-top: 15px; width: 85%; background-color: #060809; color: white;" modetype="{{ mode }}" provider="{{ provider }}">
                                     {% for model in models[provider] %}
                                         <option value="{{ model }}">{{ model }}</option>
                                     {% endfor %}
@@ -41,13 +85,21 @@
                             {% endfor %}
                         </div>
                     {% endfor %}
+                    <h3 class="mx-auto text-center" style="margin-top: 25px; border: 3px solid #0d6efd; border-radius: 25px; vertical-align: middle; width: 85%; color: white; height: 60px; line-height: 60px;">
+                                Генерация
+                    </h3>
+                    <div class="input-group mx-auto" style="width: 85%; margin-top: 25px;">
+                        <span class="input-group-text" id="basic-addon1" style="background-color: #060809; color: white;">Temp</span>
+                        <input type="text" class="form-control" placeholder="Username" aria-label="Username" aria-describedby="basic-addon1" style="background-color: #060809; color: white;">
+                    </div>
                 </div>
                 <div class="d-flex gap-3 mx-auto" style="margin-top: 15px; width: 85%;">
-                    <button class="btn btn-outline-primary w-100 flex-grow-1" style="height: 75px; gap: 10px; font-size: 25px;">Generate</button>
-                    <button class="btn btn-outline-primary" style="height: 75px; gap: 10px; font-size: 25px; aspect-ratio: 1; background-image: url('icons/skip-end-fill.svg'); background-color: #0d6efd; background-size: contain; background-repeat: no-repeat; background-position: center;"></button>
+                    <button class="btn btn-outline-primary w-100 flex-grow-1" style="height: 75px; gap: 10px; font-size: 25px;" id="GenerateButton">Generate</button>
+                    <button class="btn btn-outline-primary" style="height: 75px; gap: 10px; font-size: 25px; aspect-ratio: 1; background-image: url('icons/skip-end-fill.svg'); background-color: #0d6efd; background-size: contain; background-repeat: no-repeat; background-position: center;" id="SkipButton"></button>
                 </div>
             </div>
         </div>
     </body>
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.6/dist/js/bootstrap.bundle.min.js" integrity="sha384-j1CDi7MgGQ12Z7Qab0qlWQ/Qqz24Gc6BM0thvEMVjHnfYGF0rmFCozFSxQBxwHKO" crossorigin="anonymous"></script>
+<script src="/javascript/autocreator.js"></script>
 </html>
