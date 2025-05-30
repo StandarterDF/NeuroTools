@@ -24,5 +24,7 @@ ProjectAutoanswerT.py
 # MDtoPDF.py
 Нужен для преобразования из Markdown (MD) в PDF.
 
-# Скриншоты
+# Примеры работ:
+## ProjectAutocreator
 ![Autocreator_WebUI](https://github.com/user-attachments/assets/f5537e54-b847-4e94-ba95-820432339118)
+Пример генерации: [Применение ИИ на практике.pdf](https://github.com/user-attachments/files/20518405/default.pdf)
