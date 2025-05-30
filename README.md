@@ -25,4 +25,4 @@ ProjectAutoanswerT.py
 Нужен для преобразования из Markdown (MD) в PDF.
 
 # Скриншоты
-[[images/Autocreator_WebUI.png]]
+![Autocreator_WebUI](https://github.com/user-attachments/assets/f5537e54-b847-4e94-ba95-820432339118)
