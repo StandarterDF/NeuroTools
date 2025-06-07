@@ -31,6 +31,9 @@ if __name__ == "__main__":
             ProjectAutoanswerT.Template_1.invoke({"QuestionTopic": QuestionTopic, "Question": Question, "Length": QuestionLength})
         ).content)
         print(" (Done)", flush=True)
+    
+    ResultData = LLMFunc.FixLLMFormula(ResultData)
+    
     with open(FileName + ".md", "w", encoding="utf-8") as FileWriter:
         FileWriter.write(ResultData)
     PDF = markdown_pdf.MarkdownPdf(toc_level=3)

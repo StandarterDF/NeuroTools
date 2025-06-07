@@ -145,11 +145,15 @@ for (var elem1 of document.getElementsByClassName("ProviderSelector")) {
     });
 }
 
+document.getElementById("LastFiles").onclick = function () {
+    document.getElementById("LastFiles_List").classList.toggle("d-none")
+}
+
 setInterval(async function () {
     var Logs = (await fetch("http://127.0.0.1:22222/autocreator_log"));
     document.getElementById("TextGeneration_LOGS").value = await Logs.text();
     console.log(Logs);
-}, 500);
+}, 1000);
 
 console.log("# INFO: " + String(CurrentModel_Info));
 console.log("# FUNC: " + String(CurrentModel_Func));

@@ -13,6 +13,7 @@ import markdown_pdf
 import datetime
 import pprint
 import re
+import os
 import uvicorn
 import Config
 import threading
@@ -44,6 +45,7 @@ SubGeneration = False
 GenerationState = "None"
 LastCommand = ["0", 0]
 CurrentGeneration = False
+
 
 class SiteCMD(BaseModel):
     CMD: str
@@ -197,6 +199,9 @@ def GenerateProject(Topic: str, TopicCount: str, SubTopicGen: bool, ThinkMode: b
         ProjectAutocreatorT.Template_4.invoke({"Themes": "\n".join(FullStructure), "ThinkMode": "/nothink" if not ThinkMode else ""})    
     ).content)  +  "\n"
     FileName = Topic.replace(".", "")
+    
+    ResultData = LLMFunc.FixLLMFormula(ResultData)
+    
     with open("Docs/" + FileName + ".md", "w", encoding="utf-8") as FileWriter:
         FileWriter.write(ResultText)
     if GenPDF:
@@ -221,11 +226,19 @@ async def main(request: Request):
             )
         )
     
+    Files = [File for File in os.listdir("Docs/") if os.path.isfile(f"Docs/{File}")]
+    print(Files)
+    Files.sort(key=lambda x: os.stat(f"Docs/{x}").st_ctime)
+    print(Files)
+    
+    if len(Files) == 0: Files.append("No Files Found")
+    
     return templates.TemplateResponse("autocreator.html", {
         "request": request,
         "title": f"Project: {ProjectName}",
         "provider_models": Config.OpenAI_API_Providers,
-        "models": Models 
+        "models": Models,
+        "files": Files
     })
 
 @AutocreatorUI.get("/autocreator_log", response_class=PlainTextResponse)

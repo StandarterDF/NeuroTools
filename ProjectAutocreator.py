@@ -154,6 +154,8 @@ if __name__ == "__main__":
         })    
     ).content) + "\n"
     
+    result_text = LLMFunc.FixLLMFormula(result_text)
+    
     # Сохранение результатов
     file_name = main_topic.replace(".", "")
     with open(file_name + ".md", "w", encoding="utf-8") as file:

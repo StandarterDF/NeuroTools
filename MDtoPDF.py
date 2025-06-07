@@ -3,7 +3,7 @@ import markdown_pdf
 Name = input("Enter MD name: ")
 Data = ""
 
-with open(Name + ".md", "r", encoding="utf-8") as FileReader:
+with open(Name, "r", encoding="utf-8") as FileReader:
     Data = FileReader.read()
 
 PDF = markdown_pdf.MarkdownPdf()
