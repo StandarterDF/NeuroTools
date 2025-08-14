@@ -12,10 +12,8 @@ def TimedPrint(message, **kwargs):
     current_time = datetime.datetime.now().strftime("(%H:%M:%S)")
     print(f"# {current_time} {message}", **kwargs)
     
-def FixLLMFormula(Filename=input("Введите назание\путь файла: ")):
-    with open(Filename, "r", encoding="utf-8") as FileReader:
-        Data = FileReader.read()    
-        for Formula in re.findall("\$ .+? \$", Data):
-            print("$" + Formula[2:-2] + "$")
-            Data.replace(Formula, "$" + Formula[2:-2] + "$")
-        return Data
+def FixLLMFormula(Text: str): 
+    for Formula in re.findall("\$ .+? \$", Text):
+        print("$" + Formula[2:-2] + "$")
+        Text.replace(Formula, "$" + Formula[2:-2] + "$")
+    return Text

@@ -1,28 +1,31 @@
-import LLMLibrary.ProjectFunctions as LLMFunc
-from LLMLibrary.ProjectAI import ProjectAI_Tools
-from markdown_pdf import Section
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
-from fastapi.responses import PlainTextResponse
-from fastapi.templating import Jinja2Templates
-from fastapi.staticfiles import StaticFiles
-from pydantic import BaseModel
-from langchain_openai import ChatOpenAI
-import ProjectAutocreatorT
-import markdown_pdf
+import copy
 import datetime
+import os
 import pprint
 import re
-import os
-import uvicorn
-import Config
 import threading
 import time
-import copy
+
+import markdown_pdf
+import uvicorn
+from fastapi import FastAPI, Request
+from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.staticfiles import StaticFiles
+from fastapi.templating import Jinja2Templates
+from langchain_openai import ChatOpenAI
+from markdown_pdf import Section
+from pydantic import BaseModel
+
+import Config
+import LLMLibrary.ProjectFunctions as LLMFunc
+import ProjectAutocreatorT
+from LLMLibrary.ProjectAI import ProjectAI_Tools
 
 AutocreatorUI = FastAPI()
-AutocreatorUI.mount("/icons", StaticFiles(directory="icons"), name="icons")
-AutocreatorUI.mount("/javascript", StaticFiles(directory="javascript"), name="javascript")
+#AutocreatorUI.mount("/icons", StaticFiles(directory="icons"), name="icons")
+AutocreatorUI.mount(
+    "/javascript", StaticFiles(directory="javascript"), name="javascript"
+)
 AutocreatorUI.mount("/Docs", StaticFiles(directory="Docs"), name="Docs")
 
 # Указываем путь к папке с шаблонами
@@ -46,41 +49,60 @@ GenerationState = "None"
 LastCommand = ["0", 0]
 CurrentGeneration = False
 
+PAI = ProjectAI_Tools()
+
+Models = {}
+for provider in Config.OpenAI_API_Providers.keys():
+    Models[provider] = PAI.models2list(
+        PAI.get_models(Config.OpenAI_API_Providers[provider]["base_url"])
+    )
+
 
 class SiteCMD(BaseModel):
     CMD: str
-    
+
+
 class NNParameters(BaseModel):
     Topic: str
     TopicCount: str
-    SubTopicGen: bool 
-    ThinkMode: bool 
+    SubTopicGen: bool
+    ThinkMode: bool
     GenPDF: bool
     ModelInfo: str
-    ModelFunc:str
-    ModelInfoProvider:str
-    ModelFuncProvider:str
+    ModelFunc: str
+    ModelInfoProvider: str
+    ModelFuncProvider: str
+
 
 def logprint(Text):
     global LogsText
     current_time = datetime.datetime.now().strftime("(%H:%M:%S)")
     print(f"{current_time}" + str(Text), end="")
     LogsText += str(f"{current_time}" + str(Text))
+
+
 def logprintln(Text):
     global LogsText
     current_time = datetime.datetime.now().strftime("(%H:%M:%S)")
     print(f"{current_time}" + str(Text))
     LogsText += str(f"{current_time}" + str(Text)) + "\n"
+
+
 def logclear():
     global LogsText
     LogsText = ""
+
+
 def wait_unpause(Text: str):
     global PauseGeneration
     PauseGeneration = True
-    if Text != "": logprintln(Text)
+    if Text != "":
+        logprintln(Text)
     while not PauseGeneration:
         time.sleep(0.1)
     return True
+
+
 def wait_cmd(Text: str, State: str = "WaitForCommand"):
     global LastCommand
     global GenerationState
@@ -88,32 +110,46 @@ def wait_cmd(Text: str, State: str = "WaitForCommand"):
     LastID = copy.copy(LastCommand[1])
     while True:
         if LastCommand[1] != LastID:
-            if Text != "": logprintln(Text)
+            if Text != "":
+                logprintln(Text)
             break
         time.sleep(0.1)
     return LastCommand
-    
-def GenerateProject(Topic: str, TopicCount: str, SubTopicGen: bool, ThinkMode: bool, GenPDF: bool, ModelInfo: str, ModelFunc:str, ModelInfoProvider:str, ModelFuncProvider:str):
+
+
+def GenerateProject(
+    Topic: str,
+    TopicCount: str,
+    SubTopicGen: bool,
+    ThinkMode: bool,
+    GenPDF: bool,
+    ModelInfo: str,
+    ModelFunc: str,
+    ModelInfoProvider: str,
+    ModelFuncProvider: str,
+):
     # ----- PROGRAM START -----
     logprintln("#-------------------------------------------------#")
     logprintln("# -> PROJECT: Auto Creator")
     logprintln("#-------------------------------------------------#")
     Providers = list(Config.OpenAI_API_Providers.keys())
-    
+
     Model = ModelInfo
     Config.OpenAI_API_Providers[ModelInfoProvider]["model"] = Model
     AI_Basic = ChatOpenAI(**Config.OpenAI_API_Providers[ModelInfoProvider])
     Model = ModelFunc
     Config.OpenAI_API_Providers[ModelFuncProvider]["model"] = Model
     AI_Function = ChatOpenAI(**Config.OpenAI_API_Providers[ModelFuncProvider])
-    
+
     AI_Topic_G1 = AI_Function.with_structured_output(ProjectAutocreatorT.TopicGenerator)
-    AI_Topic_G2 = AI_Function.with_structured_output(ProjectAutocreatorT.TopicGeneratorA1)
-    
+    AI_Topic_G2 = AI_Function.with_structured_output(
+        ProjectAutocreatorT.TopicGeneratorA1
+    )
+
     Structure = []
     FullStructure = []
     ResultText = ""
-    
+
     #########################################################
     # Generate basic structure
     #########################################################
@@ -123,10 +159,16 @@ def GenerateProject(Topic: str, TopicCount: str, SubTopicGen: bool, ThinkMode: b
         logprintln(f"# -> Генерирование структуры (Попытка {i})")
         ExpTest = True
         Structure = AI_Topic_G1.invoke(
-            ProjectAutocreatorT.Template_1.invoke({ "Topic": Topic, "TopicCount": TopicCount, "ThinkMode": "/nothink" if not ThinkMode else ""})
+            ProjectAutocreatorT.Template_1.invoke(
+                {
+                    "Topic": Topic,
+                    "TopicCount": TopicCount,
+                    "ThinkMode": "/nothink" if not ThinkMode else "",
+                }
+            )
         )
         for Element in Structure.Topics:
-            if re.match("^[0-9]{1,}\.", Element) == None: 
+            if re.match("^[0-9]{1,}\.", Element) == None:
                 ExpTest = False
                 break
         if not ExpTest:
@@ -134,7 +176,7 @@ def GenerateProject(Topic: str, TopicCount: str, SubTopicGen: bool, ThinkMode: b
         logprintln(Structure)
         if wait_cmd("Устраивает результат?")[0] == "continue":
             break
-    
+
     #########################################################
     #
     #########################################################
@@ -151,57 +193,121 @@ def GenerateProject(Topic: str, TopicCount: str, SubTopicGen: bool, ThinkMode: b
                 print(f"# -> Генерирование суб-структуры (Попытка {i})")
                 ExpTest = True
                 Result = AI_Topic_G2.invoke(
-                    ProjectAutocreatorT.Template_2.invoke({"CurrTopic": CurrentTopics[0], "ThinkMode": "/nothink" if not ThinkMode else "", "CurNum": re.search("[0-9]{1,}\.", SElement).group()})
+                    ProjectAutocreatorT.Template_2.invoke(
+                        {
+                            "CurrTopic": CurrentTopics[0],
+                            "ThinkMode": "/nothink" if not ThinkMode else "",
+                            "CurNum": re.search("[0-9]{1,}\.", SElement).group(),
+                        }
+                    )
                 ).Topics
                 for Element in Result:
-                    if re.match("^[0-9]{1,}\.", Element) == None: 
+                    if re.match("^[0-9]{1,}\.", Element) == None:
                         ExpTest = False
                         break
                 if not ExpTest:
                     continue
                 break
-                
-            
-            CurrentTopics.extend(
-                Result
-            )
+
+            CurrentTopics.extend(Result)
             logprintln("# -> Подтемы:")
             pprint.pprint(CurrentTopics[1:])
             """
             
             """
-            logprintln(f"# -> (START) Генерирование введения в главу {CurrentTopics[0]}")
-            ResultText += "\n" + LLMFunc.DeleteThinking(AI_Basic.invoke(
-                ProjectAutocreatorT.Template_5.invoke({"Topic": CurrentTopics[0], "AllTopics": "\n".join(CurrentTopics[1:]), "ThinkMode": "/nothink" if not ThinkMode else ""})
-            ).content) +  "\n"
+            logprintln(
+                f"# -> (START) Генерирование введения в главу {CurrentTopics[0]}"
+            )
+            ResultText += (
+                "\n"
+                + LLMFunc.DeleteThinking(
+                    AI_Basic.invoke(
+                        ProjectAutocreatorT.Template_5.invoke(
+                            {
+                                "Topic": CurrentTopics[0],
+                                "AllTopics": "\n".join(CurrentTopics[1:]),
+                                "ThinkMode": "/nothink" if not ThinkMode else "",
+                            }
+                        )
+                    ).content
+                )
+                + "\n"
+            )
             for SubElement in CurrentTopics[1:]:
                 logprintln(f"# -> (START) Генерирование подглавы {SubElement}")
-                ResultText += "\n" +  LLMFunc.DeleteThinking(AI_Basic.invoke(
-                    ProjectAutocreatorT.Template_6.invoke({"Subtopic": SubElement, "Topic": CurrentTopics[0], "AllTopics": "\n".join(CurrentTopics[1:]), "ThinkMode": "/nothink" if not ThinkMode else ""})
-                ).content) +  "\n"
+                ResultText += (
+                    "\n"
+                    + LLMFunc.DeleteThinking(
+                        AI_Basic.invoke(
+                            ProjectAutocreatorT.Template_6.invoke(
+                                {
+                                    "Subtopic": SubElement,
+                                    "Topic": CurrentTopics[0],
+                                    "AllTopics": "\n".join(CurrentTopics[1:]),
+                                    "ThinkMode": "/nothink" if not ThinkMode else "",
+                                }
+                            )
+                        ).content
+                    )
+                    + "\n"
+                )
         else:
             """
             
             """
             logprintln(f"# -> Генерирование главы: {SElement}")
-            ResultText += "\n" +  LLMFunc.DeleteThinking(AI_Basic.invoke(
-                ProjectAutocreatorT.Template_7.invoke({"Topic": SElement, "MainTopic": Topic, "AllTopics": "\n".join(Structure.Topics), "ThinkMode": "/nothink" if not ThinkMode else ""})
-            ).content) +  "\n"
+            ResultText += (
+                "\n"
+                + LLMFunc.DeleteThinking(
+                    AI_Basic.invoke(
+                        ProjectAutocreatorT.Template_7.invoke(
+                            {
+                                "Topic": SElement,
+                                "MainTopic": Topic,
+                                "AllTopics": "\n".join(Structure.Topics),
+                                "ThinkMode": "/nothink" if not ThinkMode else "",
+                            }
+                        )
+                    ).content
+                )
+                + "\n"
+            )
         FullStructure.extend(CurrentTopics)
-    
-    
-    ResultText = "\n" + LLMFunc.DeleteThinking(AI_Basic.invoke(
-        ProjectAutocreatorT.Template_3.invoke({"Themes": "\n".join(FullStructure), "ThinkMode": "/nothink" if not ThinkMode else ""}
-        )    
-    ).content) + "\n" + ResultText
-    
-    ResultText += "\n" +  LLMFunc.DeleteThinking(AI_Basic.invoke(
-        ProjectAutocreatorT.Template_4.invoke({"Themes": "\n".join(FullStructure), "ThinkMode": "/nothink" if not ThinkMode else ""})    
-    ).content)  +  "\n"
+
+    ResultText = (
+        "\n"
+        + LLMFunc.DeleteThinking(
+            AI_Basic.invoke(
+                ProjectAutocreatorT.Template_3.invoke(
+                    {
+                        "Themes": "\n".join(FullStructure),
+                        "ThinkMode": "/nothink" if not ThinkMode else "",
+                    }
+                )
+            ).content
+        )
+        + "\n"
+        + ResultText
+    )
+
+    ResultText += (
+        "\n"
+        + LLMFunc.DeleteThinking(
+            AI_Basic.invoke(
+                ProjectAutocreatorT.Template_4.invoke(
+                    {
+                        "Themes": "\n".join(FullStructure),
+                        "ThinkMode": "/nothink" if not ThinkMode else "",
+                    }
+                )
+            ).content
+        )
+        + "\n"
+    )
     FileName = Topic.replace(".", "")
-    
-    ResultData = LLMFunc.FixLLMFormula(ResultData)
-    
+
+    ResultText = LLMFunc.FixLLMFormula(ResultText)
+
     with open("Docs/" + FileName + ".md", "w", encoding="utf-8") as FileWriter:
         FileWriter.write(ResultText)
     if GenPDF:
@@ -213,71 +319,77 @@ def GenerateProject(Topic: str, TopicCount: str, SubTopicGen: bool, ThinkMode: b
     FinalFile = FileName + ".pdf"
     global GenerationState
     GenerationState = "Complete"
-    
-@AutocreatorUI.get("/autocreator", response_class=HTMLResponse)
+
+
+@AutocreatorUI.get("/", response_class=HTMLResponse)
 async def main(request: Request):
-    PAI = ProjectAI_Tools()
-    
-    Models = {}
-    for provider in Config.OpenAI_API_Providers.keys():
-        Models[provider] = PAI.models2list(
-            PAI.get_models(
-                Config.OpenAI_API_Providers[provider]["base_url"]
-            )
-        )
-    
     Files = [File for File in os.listdir("Docs/") if os.path.isfile(f"Docs/{File}")]
     print(Files)
-    Files.sort(key=lambda x: os.stat(f"Docs/{x}").st_ctime)
+    Files.sort(key=lambda x: -os.stat(f"Docs/{x}").st_ctime)
     print(Files)
     
-    if len(Files) == 0: Files.append("No Files Found")
+    Files = Files[:10]
     
-    return templates.TemplateResponse("autocreator.html", {
-        "request": request,
-        "title": f"Project: {ProjectName}",
-        "provider_models": Config.OpenAI_API_Providers,
-        "models": Models,
-        "files": Files
-    })
+    if len(Files) == 0:
+        Files.append("No Files Found")
+
+    return templates.TemplateResponse(
+        "autocreator.html",
+        {
+            "request": request,
+            "title": f"Project: {ProjectName}",
+            "provider_models": Config.OpenAI_API_Providers,
+            "models": Models,
+            "files": Files,
+        },
+    )
+
 
 @AutocreatorUI.get("/autocreator_log", response_class=PlainTextResponse)
 async def get_log(requests: Request):
     return LogsText
+
 
 @AutocreatorUI.get("/autocreator_getfile", response_class=PlainTextResponse)
 async def get_file(requests: Request):
     global FinalFile
     return FinalFile
 
+
 @AutocreatorUI.get("/autocreator_getstate", response_class=PlainTextResponse)
 async def get_state(requests: Request):
     global GenerationState
     return GenerationState
+
 
 @AutocreatorUI.post("/autocreator_command", response_class=PlainTextResponse)
 async def set_cmd(cmd: SiteCMD):
     global LastCommand
     logprintln(LastCommand)
     LastCommand = [cmd.CMD, LastCommand[1] + 1]
-    
+
+
 @AutocreatorUI.post("/autocreator_generate", response_class=PlainTextResponse)
 async def get_state(nnparameters: NNParameters):
     global CurrentGeneration
     if not CurrentGeneration:
         CurrentGeneration = True
-        threading.Thread(target=GenerateProject, 
-                         args=(
-                            nnparameters.Topic, 
-                            nnparameters.TopicCount, 
-                            nnparameters.SubTopicGen, 
-                            nnparameters.ThinkMode, 
-                            nnparameters.GenPDF, 
-                            nnparameters.ModelInfo, 
-                            nnparameters.ModelFunc, 
-                            nnparameters.ModelInfoProvider, 
-                            nnparameters.ModelFuncProvider)
+        threading.Thread(
+            target=GenerateProject,
+            args=(
+                nnparameters.Topic,
+                nnparameters.TopicCount,
+                nnparameters.SubTopicGen,
+                nnparameters.ThinkMode,
+                nnparameters.GenPDF,
+                nnparameters.ModelInfo,
+                nnparameters.ModelFunc,
+                nnparameters.ModelInfoProvider,
+                nnparameters.ModelFuncProvider,
+            ),
         ).start()
+
 
 if __name__ == "__main__":
     uvicorn.run(AutocreatorUI, host="127.0.0.1", port=22222)
+

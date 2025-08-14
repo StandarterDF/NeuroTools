@@ -1,14 +1,17 @@
-import LLMLibrary.ProjectFunctions as LLMFunc
-from markdown_pdf import Section
-import ProjectAutoanswerT
-import markdown_pdf
 import pprint
+
+import markdown_pdf
+from markdown_pdf import Section
+
+import LLMLibrary.ProjectFunctions as LLMFunc
+import ProjectAutoanswerT
 
 # ----- PROGRAM START -----
 print("#-------------------------------------------------#")
 print("# -> PROJECT: Auto Answer")
 print("#-------------------------------------------------#")
 from ProjectTemplate import *
+
 # -------------------------
 if __name__ == "__main__":
     ResultData = ""
@@ -16,7 +19,9 @@ if __name__ == "__main__":
     FileName = input("# -> Файл вывода результатов: ")
     QuestionTopic = input("# -> Тематика вопросов (None = Auto): ")
     QuestionLength = input("# -> Отвечать нужно так: ")
-    QuestionParser = AI_Function.with_structured_output(ProjectAutoanswerT.QuestionParser)
+    QuestionParser = AI_Function.with_structured_output(
+        ProjectAutoanswerT.QuestionParser
+    )
     Questions = QuestionParser.invoke(FileData)
     print("#-------------------------------------------------#")
     print("Все вопросы:")
@@ -27,16 +32,25 @@ if __name__ == "__main__":
     for Question in Questions.Questions:
         LLMFunc.TimedPrint(f"LLMGeneration -> {Question}", flush=True, end="")
         ResultData += "\n# " + Question + "\n"
-        ResultData += LLMFunc.DeleteThinking(AI_Basic.invoke(
-            ProjectAutoanswerT.Template_1.invoke({"QuestionTopic": QuestionTopic, "Question": Question, "Length": QuestionLength})
-        ).content)
+        ResultData += LLMFunc.DeleteThinking(
+            AI_Basic.invoke(
+                ProjectAutoanswerT.Template_1.invoke(
+                    {
+                        "QuestionTopic": QuestionTopic,
+                        "Question": Question,
+                        "Length": QuestionLength,
+                    }
+                )
+            ).content
+        )
         print(" (Done)", flush=True)
-    
+
     ResultData = LLMFunc.FixLLMFormula(ResultData)
-    
+
     with open(FileName + ".md", "w", encoding="utf-8") as FileWriter:
         FileWriter.write(ResultData)
     PDF = markdown_pdf.MarkdownPdf(toc_level=3)
     PDF.add_section(Section(ResultData, toc=False))
     PDF.save(FileName + ".pdf")
     print("# -> Файл успешно сохранен!")
+
